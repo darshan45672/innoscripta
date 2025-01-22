@@ -16,9 +16,5 @@ class Article extends Model
 
     protected $casts = [
         'publishedAt' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-        'source_name' => 'text',
-        'title' => 'text',
     ];
 }

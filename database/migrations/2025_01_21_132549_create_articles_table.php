@@ -20,8 +20,8 @@ return new class extends Migration
             $table->longText('urlToImage');
             $table->longText('publishedAt');
             $table->longText('content');
-            $table->timestamps();
             $table->mediumText('source_name');
+            $table->timestamps();
         });
     }
 

@@ -11,20 +11,30 @@ class ArticleController extends Controller
     public function getArticles()
     {
         $response = Http::get('https://newsapi.org/v2/everything?q=political&apiKey=22ce375e050640ca8c116505683a6a27');
+        // $response = Http::get('https://content.guardianapis.com/search?api-key=5a80c638-06d2-4e55-b23f-bf6620525c25');
         $fetchedArticles = $response->json()['articles'];
-        // dd($fetchedArticles[56]);
+        dd($fetchedArticles);
+        // dd($response->json());
+        $count = count($fetchedArticles);
+        // dd($count);
 
-        $article = Article::create([
-            'title' => $fetchedArticles[0]['title'],
-            'author' => $fetchedArticles[0]['author'],
-            'description' => $fetchedArticles[0]['description'],
-            'url' => $fetchedArticles[0]['url'],
-            'urlToImage' => $fetchedArticles[0]['urlToImage'],
-            'publishedAt' => $fetchedArticles[0]['publishedAt'],
-            'content' => $fetchedArticles[0]['content'],
-            'source_name' => $fetchedArticles[0]['source']['name'],
-        ]);
+        foreach ($fetchedArticles as $article) {
+            if (isset($article['title'], $article['author'], $article['description'], $article['url'], $article['source']['name'])) {
+                Article::create([
+                    'title' => $article['title'],
+                    'author' => $article['author'] ?? 'Unknown',
+                    'description' => $article['description'],
+                    'url' => $article['url'],
+                    'urlToImage' => $article['urlToImage'] ?? '',
+                    'publishedAt' => $article['publishedAt'],
+                    'content' => $article['content'] ?? '',
+                    'source_name' => $article['source']['name'] ?? 'Unknown',
+                ]);
+            }
+        }
+        
 
-        dd($article);
+        dd("done");
+        // dd($article);
     }
 }
