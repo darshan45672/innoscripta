@@ -10,7 +10,7 @@ class Article extends Model
     /** @use HasFactory<\Database\Factories\ArticleFactory> */
     use HasFactory;
 
-    protected $fillable = [ 'title', 'author', 'description', 'url', 'urlToImage', 'publishedAt', 'content', 'source_name'];
+    protected $fillable = [ 'title', 'author', 'description', 'url', 'urlToImage', 'publishedAt', 'content', 'source_name', 'provider'];
 
     protected $hidden = ['created_at', 'updated_at'];
 
