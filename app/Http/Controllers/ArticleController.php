@@ -10,6 +10,16 @@ use Illuminate\Support\Facades\Http;
 
 class ArticleController extends Controller
 {
+    /**
+     * Fetches articles from multiple news sources and stores them in the database.
+     *
+     * This method retrieves articles from three different news sources: NewsAPI, The Guardian, and The New York Times.
+     * It processes the fetched articles and stores them in the `articles` table.
+     *
+     * @return void
+     *
+     * @throws \Illuminate\Http\Client\RequestException
+     */
     public function getArticles()
     {
         $url = env('NEWS_API_URL') . env('NEWS_API_KEY');
@@ -73,8 +83,33 @@ class ArticleController extends Controller
         }
     }
 
+    /**
+     * Display a listing of the articles.
+     *
+     * This method handles the retrieval of articles from the database with optional filters
+     * for search, provider, source, and date range. The results are cached for 6 minutes
+     * to improve performance.
+     *
+     * @param \Illuminate\Http\Request $request The incoming request instance containing query parameters.
+     * 
+     * @return \Illuminate\Http\JsonResponse A JSON response containing the paginated list of articles.
+     *
+     * Query Parameters:
+     * - search (string): A keyword to search in the title, author, and description of articles.
+     * - provider (string): A keyword to filter articles by provider.
+     * - source (string): A keyword to filter articles by source name.
+     * - from (string): The start date to filter articles by published date.
+     * - to (string): The end date to filter articles by published date.
+     */
     public function index(Request $request)
     {
+        /**
+         * Generates a unique cache key based on the request parameters and stores/retrieves
+         * the articles from the cache.
+         *
+         * @param \Illuminate\Http\Request $request The incoming request object containing all parameters.
+         * @return mixed The cached articles or the result of the callback function if not cached.
+         */
         $cacheKey = 'articles_' . md5(json_encode($request->all()));
 
         $articles = Cache::remember($cacheKey, 6, function () use ($request) {
@@ -119,6 +154,12 @@ class ArticleController extends Controller
 
     }
 
+    /**
+     * Display the specified article.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function show($id)
     {
         $article = Article::find($id);
