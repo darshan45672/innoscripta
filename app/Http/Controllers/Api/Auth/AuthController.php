@@ -131,6 +131,7 @@ class AuthController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function user(){
+
         $user = new UserResource(User::findOrFail(Auth::id()));
 
         return response()->json([
@@ -170,7 +171,7 @@ class AuthController extends Controller
         $url = str_replace(env('APP_URL'), env('FRONTEND_APP_URL'), $url);
 
         if($user){
-            // $user->notify(new ResetPassword($user->email, $url));
+
             $user->notify(new PasswordResetLink($user->email, $url));
 
             return response()->json([
@@ -183,6 +184,19 @@ class AuthController extends Controller
         ], 404);
     }
 
+    /**
+     * Reset the password for the user.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     *
+     * This method validates the request data to ensure that the email exists in the users table
+     * and that the password meets the required criteria. If the user is found, their password is
+     * updated with the new hashed password. A success message is returned upon successful update.
+     * If the user is not found, a 404 response with an error message is returned.
+     */
     public function resetPassword(Request $request){
         $data = $request->validate([
             'email' => 'required|email|exists:users,email',
