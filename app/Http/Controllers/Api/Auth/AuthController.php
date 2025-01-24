@@ -12,6 +12,7 @@ use App\Notifications\PasswordResetLink;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
@@ -57,12 +58,15 @@ class AuthController extends Controller
 
         $this->syncPreferences($user, $data);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $user->tokens()->where('expires_at', '<', now())->delete();
+
+        $token = $user->createToken('auth_token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
+
 
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => new UserResource($user->load(['preferredCategories', 'preferredAuthors', 'preferredSources']))
+            'user' => new UserResource($user->load(['preferredCategories', 'preferredAuthors', 'preferredSources'])),
         ]);
     }
 
@@ -77,27 +81,33 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'email' => 'required|email|exists:users',
-            'password' => 'required|min:6'
+            'password' => 'required|min:6',
         ]);
 
-        $user = User::where('email', $data['email'])->firstOrFail();
+        $user = User::where('email', $data['email'])->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
             return response()->json([
-                'message' => 'Invalid credentials'
+                'message' => 'Invalid credentials',
             ], 401);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $user->tokens()->where('expires_at', '<', now())->delete();
 
-        $user = new UserResource($user->load(['preferredCategories', 'preferredAuthors', 'preferredSources']));
+        $token = $user->createToken('auth_token', ['*'], now()->addMinutes(config('sanctum.expiration')))->plainTextToken;
+
+        $cacheKey = 'user_' . $user->id;
+        $user = Cache::remember($cacheKey, 60, function () use ($user) {
+            return new UserResource($user->load(['preferredCategories', 'preferredAuthors', 'preferredSources']));
+        });
 
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user
+            'user' => $user,
         ]);
     }
+
 
 
     /**
@@ -123,14 +133,16 @@ class AuthController extends Controller
      */
     public function user()
     {
-        $user = User::findOrFail(Auth::id());
-
-        $user = new UserResource($user->load(['preferredCategories', 'preferredAuthors', 'preferredSources']));
+        $cacheKey = 'user_' . Auth::id();
+        $user = Cache::remember($cacheKey, 60, function () {
+            $user = User::findOrFail(Auth::id());
+            return new UserResource($user->load(['preferredCategories', 'preferredAuthors', 'preferredSources']));
+        });
 
         return response()->json([
             'status' => 'success',
-            'message' => 'User Detials',
-            'user_id' => $user->id,
+            'message' => 'User Details',
+            'user_id' => Auth::id(),
             'user' => $user,
         ]);
     }

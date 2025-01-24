@@ -30,7 +30,7 @@ class Article extends Model
 
     public function source()
     {
-        return $this->belongsTo(NewsSource::class);
+        return $this->belongsTo(NewsSource::class, 'news_source_id');
     }
 
 }

@@ -11,14 +11,15 @@ Route::get('/user', function (Request $request) {
 
 
 Route::post('/register', [AuthController::class, 'register'])->name('register');
-Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login')->middleware('throttle:api');
 Route::post('/password/email', [AuthController::class, 'forgotPassword'])->name('password.email');
 Route::post('/password/reset', [AuthController::class, 'resetPassword'])->middleware('signed')->name('password.reset');
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', [AuthController::class, 'user'])->name('user');
+    Route::get('/user', [AuthController::class, 'user'])->name('user')->middleware('throttle:api');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/preferences', [ArticleController::class, 'preferences'])->name('preferences')->middleware('throttle:api');
 });
 
 Route::get('/articles', [ArticleController::class, 'index'])->middleware(['throttle:api']);
-Route::get('/articles/{article}', [ArticleController::class, 'show']);
+Route::get('/articles/{article}', [ArticleController::class, 'show'])->middleware(['throttle:api']);
