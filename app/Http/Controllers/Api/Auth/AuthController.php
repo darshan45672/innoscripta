@@ -80,7 +80,7 @@ class AuthController extends Controller
             'password' => 'required|min:6'
         ]);
 
-        $user = User::where('email', $data['email'])->first();
+        $user = User::where('email', $data['email'])->firstOrFail();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
             return response()->json([
@@ -215,7 +215,7 @@ class AuthController extends Controller
             'password' => 'required|min:6|confirmed'
         ]);
 
-        $user = User::where('email', $data['email'])->findOrFail();
+        $user = User::where('email', $data['email'])->firstOrFail();
 
         $user->update([
             'password' => Hash::make($data['password'])
