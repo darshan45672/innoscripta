@@ -59,4 +59,9 @@ class User extends Authenticatable
         return $this->belongsToMany(Author::class, 'author_user');
     }
 
+    public function preferredSources()
+    {
+        return $this->belongsToMany(NewsSource::class, 'news_source_user');
+    }
+
 }

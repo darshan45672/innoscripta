@@ -18,7 +18,6 @@ return new class extends Migration {
             $table->longText('urlToImage')->nullable();
             $table->longText('publishedAt');
             $table->longText('content')->nullable();
-            $table->mediumText('source_name');
             $table->string('provider')->default('newsapi');
             $table->timestamps();
         });

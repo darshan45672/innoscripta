@@ -10,7 +10,7 @@ class Article extends Model
     /** @use HasFactory<\Database\Factories\ArticleFactory> */
     use HasFactory;
 
-    protected $fillable = [ 'title', 'author', 'description', 'url', 'urlToImage', 'publishedAt', 'content', 'source_name', 'provider'];
+    protected $fillable = [ 'title', 'author', 'description', 'url', 'urlToImage', 'publishedAt', 'content', 'news_source_id', 'provider'];
 
     protected $hidden = ['created_at', 'updated_at'];
 
@@ -26,6 +26,11 @@ class Article extends Model
     public function authors()
     {
         return $this->belongsToMany(Author::class, 'article_author');
+    }
+
+    public function source()
+    {
+        return $this->belongsTo(NewsSource::class);
     }
 
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\Author;
 use App\Models\Category;
+use App\Models\NewsSource;
 use App\Models\User;
 use App\Notifications\PasswordResetLink;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -14,9 +15,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
+
     /**
      * Register a new user.
      *
@@ -38,23 +41,11 @@ class AuthController extends Controller
             'password' => 'required|string|min:6|confirmed',
             'phone' => 'nullable|string|min:10|max:10',
             'preferred_categories' => 'nullable|array',
-            'preferred_categories.*' => [
-                'string',
-                function ($attribute, $value, $fail) {
-                    if (!Category::where('name', $value)->exists()) {
-                        $fail("The selected category name ($value) is invalid.");
-                    }
-                }
-            ],
+            'preferred_categories.*' => ['integer', Rule::exists('categories', 'id')],
             'preferred_authors' => 'nullable|array',
-            'preferred_authors.*' => [
-                'string',
-                function ($attribute, $value, $fail) {
-                    if (!Author::where('name', $value)->exists()) {
-                        $fail("The selected author name ($value) is invalid.");
-                    }
-                }
-            ],
+            'preferred_authors.*' => ['integer', Rule::exists('authors', 'id')],
+            'preferred_sources' => 'nullable|array',
+            'preferred_sources.*' => ['integer', Rule::exists('news_sources', 'id')],
         ]);
 
         $user = User::create([
@@ -64,65 +55,23 @@ class AuthController extends Controller
             'phone' => $data['phone'],
         ]);
 
-        if (!empty($data['preferred_categories'])) {
-            $categoryIds = Category::whereIn('name', $data['preferred_categories'])->pluck('id')->toArray();
-
-            $user->preferredCategories()->sync($categoryIds);
-        }
-
-        if (!empty($data['preferred_authors'])) {
-            $authorIds = Author::whereIn('name', $data['preferred_authors'])->pluck('id')->toArray();
-            $user->preferredAuthors()->sync($authorIds);
-        }
+        $this->syncPreferences($user, $data);
 
         $token = $user->createToken('auth_token')->plainTextToken;
-
-        $user = new UserResource($user->load('preferredCategories', 'preferredAuthors'));
 
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'user' => $user
+            'user' => new UserResource($user->load(['preferredCategories', 'preferredAuthors', 'preferredSources']))
         ]);
     }
 
+
     /**
      * Handle the login request.
-     *
+     * 
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\JsonResponse
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     *
-     * @OA\Post(
-     *     path="/api/auth/login",
-     *     summary="Login user",
-     *     tags={"Auth"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"email","password"},
-     *             @OA\Property(property="email", type="string", format="email", example="user@example.com"),
-     *             @OA\Property(property="password", type="string", format="password", example="password123")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful login",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="access_token", type="string"),
-     *             @OA\Property(property="token_type", type="string", example="Bearer"),
-     *             @OA\Property(property="user", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Invalid credentials",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Invalid credentials")
-     *         )
-     *     )
-     * )
      */
     public function login(Request $request)
     {
@@ -131,7 +80,7 @@ class AuthController extends Controller
             'password' => 'required|min:6'
         ]);
 
-        $user = new UserResource(User::where('email', $data['email'])->first());
+        $user = User::where('email', $data['email'])->first();
 
         if (!$user || !Hash::check($data['password'], $user->password)) {
             return response()->json([
@@ -141,12 +90,15 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        $user = new UserResource($user->load(['preferredCategories', 'preferredAuthors', 'preferredSources']));
+
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
             'user' => $user
         ]);
     }
+
 
     /**
      * Log out the authenticated user by deleting their current access token.
@@ -163,6 +115,7 @@ class AuthController extends Controller
         ]);
     }
 
+
     /**
      * Retrieve the authenticated user's details.
      *
@@ -170,16 +123,20 @@ class AuthController extends Controller
      */
     public function user()
     {
+        $user = User::findOrFail(Auth::id());
 
-        $user = new UserResource(User::findOrFail(Auth::id()));
+        $user = new UserResource($user->load(['preferredCategories', 'preferredAuthors', 'preferredSources']));
 
         return response()->json([
             'status' => 'success',
             'message' => 'User Detials',
+            'user_id' => $user->id,
             'user' => $user,
-            'id' => $user->id,
         ]);
     }
+
+
+
     /**
      * Handle the forgot password request.
      *
@@ -200,29 +157,43 @@ class AuthController extends Controller
             'email' => 'required|email|exists:users,email'
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->firstOrFail();
 
+
+        /**
+         * Generate a temporary signed URL for password reset.
+         *
+         * This URL will be valid for 30 minutes and includes the user's email as a parameter.
+         *
+         * @return string The temporary signed URL for password reset.
+         */
         $url = URL::temporarySignedRoute(
             'password.reset',
             now()->addMinutes(30),
             ['email' => $user->email]
         );
 
+
+        /**
+         * Replaces the base URL of the application with the frontend application URL.
+         *
+         * This function takes the given URL and replaces the base URL defined in the
+         * environment variable `APP_URL` with the frontend application URL defined in
+         * the environment variable `FRONTEND_APP_URL`.
+         *
+         * @param string $url The URL to be modified.
+         * @return string The modified URL with the frontend application base URL.
+         */
         $url = str_replace(env('APP_URL'), env('FRONTEND_APP_URL'), $url);
 
-        if ($user) {
 
-            $user->notify(new PasswordResetLink($user->email, $url));
-
-            return response()->json([
-                'message' => 'Password reset link sent on your email id'
-            ], 200);
-        }
+        $user->notify(new PasswordResetLink($user->email, $url));
 
         return response()->json([
-            'message' => 'User not found'
-        ], 404);
+            'message' => 'Password reset link sent on your email id'
+        ], 200);
     }
+
 
     /**
      * Reset the password for the user.
@@ -232,10 +203,10 @@ class AuthController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      *
-     * This method validates the request data to ensure that the email exists in the users table
-     * and that the password meets the required criteria. If the user is found, their password is
-     * updated with the new hashed password. A success message is returned upon successful update.
-     * If the user is not found, a 404 response with an error message is returned.
+     * This method validates the incoming request to ensure that the email exists in the users table
+     * and that the password is confirmed and has a minimum length of 6 characters. If the user is found,
+     * their password is updated with the new hashed password. A success message is returned upon successful
+     * password reset. If the user is not found, a 404 response with an error message is returned.
      */
     public function resetPassword(Request $request)
     {
@@ -244,20 +215,36 @@ class AuthController extends Controller
             'password' => 'required|min:6|confirmed'
         ]);
 
-        $user = User::where('email', $data['email'])->first();
+        $user = User::where('email', $data['email'])->findOrFail();
 
-        if ($user) {
-            $user->update([
-                'password' => Hash::make($data['password'])
-            ]);
-
-            return response()->json([
-                'message' => 'Password reset successfully'
-            ], 200);
-        }
+        $user->update([
+            'password' => Hash::make($data['password'])
+        ]);
 
         return response()->json([
-            'message' => 'User not found'
-        ], 404);
+            'message' => 'Password reset successfully'
+        ], 200);
+
+    }
+
+    /**
+     * Sync user preferences (categories, authors, and sources).
+     * 
+     * @param \App\Models\User $user
+     * @param array $data
+     */
+    private function syncPreferences(User $user, array $data)
+    {
+        if (!empty($data['preferred_categories'])) {
+            $user->preferredCategories()->sync($data['preferred_categories']);
+        }
+
+        if (!empty($data['preferred_authors'])) {
+            $user->preferredAuthors()->sync($data['preferred_authors']);
+        }
+
+        if (!empty($data['preferred_sources'])) {
+            $user->preferredSources()->sync($data['preferred_sources']);
+        }
     }
 }

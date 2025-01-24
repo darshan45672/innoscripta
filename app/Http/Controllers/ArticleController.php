@@ -6,6 +6,7 @@ use App\Http\Resources\ArticleResource;
 use App\Models\Article;
 use App\Models\Author;
 use App\Models\Category;
+use App\Models\NewsSource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -31,6 +32,9 @@ class ArticleController extends Controller
         // dd($fetchedArticles);
         foreach ($fetchedArticles as $article) {
             if (isset($article['title'], $article['author'], $article['description'], $article['url'], $article['source']['name'])) {
+                // dd($article['source']['name']);
+                $source = NewsSource::firstOrCreate(['name' => $article['source']['name']]);
+                // dd($source->id);
                 $newArticle = Article::create([
                     'title' => $article['title'],
                     'description' => $article['description'],
@@ -38,8 +42,8 @@ class ArticleController extends Controller
                     'urlToImage' => $article['urlToImage'] ?? '',
                     'publishedAt' => $article['publishedAt'],
                     'content' => $article['content'] ?? '',
-                    'source_name' => $article['source']['name'] ?? 'Unknown',
                     'provider' => 'newsapi',
+                    'news_source_id' => $source->id,
                 ]);
 
                 $categoryName = isset($article['category']) && !empty($article['category'])
@@ -50,11 +54,11 @@ class ArticleController extends Controller
 
                 $newArticle->categories()->attach($category->id);
 
-                $authors = $article['author'] ?? 'Unknown';
+                $authors = $article['author'] ?? 'Anonymous';
 
 
                 if (!is_array($authors)) {
-                    $authors = array_map('trim', explode(',', $authors)); // Split multiple authors by commas
+                    $authors = array_map('trim', explode(',', $authors));
                 }
 
                 foreach ($authors as $authorName) {
@@ -79,15 +83,17 @@ class ArticleController extends Controller
 
 
                 if (isset($article['author'])) {
-                    if(!is_array($article['author'])) {
-                        $article['author'] = array_map('trim', explode(',', $article['author'])); 
+                    if (!is_array($article['author'])) {
+                        $article['author'] = array_map('trim', explode(',', $article['author']));
                     }
                 }
 
                 $authors = Author::firstOrCreate(
-                    ['name' => $article['author'] ?? 'Unknown'],
+                    ['name' => $article['author'] ?? 'Anonymous'],
                 );
-                
+
+                $source = NewsSource::firstOrCreate(['name' => $article['pillarName'] ?? 'The Guardian']);
+
                 $newArticle = Article::create([
                     'title' => $article['webTitle'],
                     'description' => $article['webTitle'],
@@ -95,6 +101,7 @@ class ArticleController extends Controller
                     'publishedAt' => $article['webPublicationDate'],
                     'source_name' => $article['sectionName'],
                     'provider' => 'guardian',
+                    'news_source_id' => $source->id,
                 ]);
 
                 $newArticle->categories()->attach($category->id);
@@ -112,6 +119,7 @@ class ArticleController extends Controller
         // dd($items);
 
         foreach ($items['item'] as $article) {
+            $source = NewsSource::firstOrCreate(['name' => $article['source'] ?? 'New York Times']);
             if (isset($article->title, $article->link, $article->pubDate)) {
                 $newArticle = Article::create([
                     'title' => $article->title,
@@ -120,6 +128,7 @@ class ArticleController extends Controller
                     'publishedAt' => $article->pubDate,
                     'source_name' => 'New York Times',
                     'provider' => 'nytimes',
+                    'news_source_id' => $source->id,
                 ]);
             }
             if (isset($article->category)) {
@@ -132,7 +141,7 @@ class ArticleController extends Controller
                 }
             }
             $authors = Author::firstOrCreate(
-                ['name' => $article['author'] ?? 'Unknown'],
+                ['name' => $article['author'] ?? 'Anonymous'],
             );
             $newArticle->authors()->attach($authors);
 
