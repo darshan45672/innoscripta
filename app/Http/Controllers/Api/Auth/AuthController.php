@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
+use App\Models\Category;
 use App\Models\User;
 use App\Notifications\PasswordResetLink;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -28,12 +29,15 @@ class AuthController extends Controller
      * 
      * @throws \Illuminate\Validation\ValidationException If the validation of the request data fails.
      */
-    public function register(Request $request){
+    public function register(Request $request)
+    {
         $data = $request->validate([
             'name' => 'required|string',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
             'phone' => 'nullable|string|min:10|max:10',
+            'preferred_categories' => 'nullable|array', 
+            'preferred_categories.*' => 'string|exists:categories,name',
         ]);
 
         $user = User::create([
@@ -43,7 +47,15 @@ class AuthController extends Controller
             'phone' => $data['phone'],
         ]);
 
+        if (!empty($data['preferred_categories'])) {
+            $categoryIds = Category::whereIn('name', $data['preferred_categories'])->pluck('id')->toArray();
+    
+            $user->preferredCategories()->sync($categoryIds);
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        $user = new UserResource($user->load('preferredCategories'));
 
         return response()->json([
             'access_token' => $token,
@@ -90,7 +102,8 @@ class AuthController extends Controller
      *     )
      * )
      */
-    public function login(Request $request){
+    public function login(Request $request)
+    {
         $data = $request->validate([
             'email' => 'required|email|exists:users',
             'password' => 'required|min:6'
@@ -98,7 +111,7 @@ class AuthController extends Controller
 
         $user = new UserResource(User::where('email', $data['email'])->first());
 
-        if(!$user || !Hash::check($data['password'], $user->password)){
+        if (!$user || !Hash::check($data['password'], $user->password)) {
             return response()->json([
                 'message' => 'Invalid credentials'
             ], 401);
@@ -119,7 +132,8 @@ class AuthController extends Controller
      * @param \Illuminate\Http\Request $request The HTTP request instance.
      * @return \Illuminate\Http\JsonResponse JSON response indicating the user has been logged out.
      */
-    public function logout(Request $request){
+    public function logout(Request $request)
+    {
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
@@ -132,7 +146,8 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function user(){
+    public function user()
+    {
 
         $user = new UserResource(User::findOrFail(Auth::id()));
 
@@ -156,7 +171,8 @@ class AuthController extends Controller
      * @throws \Illuminate\Validation\ValidationException If the validation fails.
      */
 
-    public function forgotPassword(Request $request){
+    public function forgotPassword(Request $request)
+    {
 
         $data = $request->validate([
             'email' => 'required|email|exists:users,email'
@@ -172,7 +188,7 @@ class AuthController extends Controller
 
         $url = str_replace(env('APP_URL'), env('FRONTEND_APP_URL'), $url);
 
-        if($user){
+        if ($user) {
 
             $user->notify(new PasswordResetLink($user->email, $url));
 
@@ -199,7 +215,8 @@ class AuthController extends Controller
      * updated with the new hashed password. A success message is returned upon successful update.
      * If the user is not found, a 404 response with an error message is returned.
      */
-    public function resetPassword(Request $request){
+    public function resetPassword(Request $request)
+    {
         $data = $request->validate([
             'email' => 'required|email|exists:users,email',
             'password' => 'required|min:6|confirmed'
@@ -207,7 +224,7 @@ class AuthController extends Controller
 
         $user = User::where('email', $data['email'])->first();
 
-        if($user){
+        if ($user) {
             $user->update([
                 'password' => Hash::make($data['password'])
             ]);
