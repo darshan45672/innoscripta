@@ -17,4 +17,9 @@ class Article extends Model
     protected $casts = [
         'publishedAt' => 'datetime',
     ];
+
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class, 'article_category');
+    }
 }

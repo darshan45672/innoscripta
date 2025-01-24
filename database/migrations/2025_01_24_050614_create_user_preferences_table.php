@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('phone')->nullable();
-            $table->longText('preferences')->nullable();
+        Schema::create('user_preferences', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade');
+            $table->timestamps();
         });
     }
 
@@ -22,9 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('phone');
-            $table->dropColumn('preferences');
-        });
+        Schema::dropIfExists('user_preferences');
     }
 };

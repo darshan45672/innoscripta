@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Category;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -19,5 +20,9 @@ class DatabaseSeeder extends Seeder
             'name' => 'Darshan Bhandary',
             'email' => 'drshnbhandary@gmail.com',
         ]);
+
+        // Category::factory()->create([
+        //     'name' => 'General',
+        // ]);
     }
 }
