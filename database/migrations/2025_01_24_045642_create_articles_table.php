@@ -13,13 +13,11 @@ return new class extends Migration {
         Schema::create('articles', function (Blueprint $table) {
             $table->id();
             $table->longText('title');
-            $table->mediumText('author');
             $table->longText('description');
             $table->longText('url');
             $table->longText('urlToImage')->nullable();
             $table->longText('publishedAt');
             $table->longText('content')->nullable();
-            $table->mediumText('source_name');
             $table->string('provider')->default('newsapi');
             $table->timestamps();
         });
