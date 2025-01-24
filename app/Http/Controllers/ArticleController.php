@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ArticleResource;
 use App\Models\Article;
+use App\Models\Author;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -27,11 +28,11 @@ class ArticleController extends Controller
         $response = Http::get($url);
         $fetchedArticles = $response->json()['articles'];
 
+        // dd($fetchedArticles);
         foreach ($fetchedArticles as $article) {
             if (isset($article['title'], $article['author'], $article['description'], $article['url'], $article['source']['name'])) {
                 $newArticle = Article::create([
                     'title' => $article['title'],
-                    'author' => $article['author'] ?? 'Unknown',
                     'description' => $article['description'],
                     'url' => $article['url'],
                     'urlToImage' => $article['urlToImage'] ?? '',
@@ -48,13 +49,27 @@ class ArticleController extends Controller
                 $category = Category::firstOrCreate(['name' => $categoryName]);
 
                 $newArticle->categories()->attach($category->id);
+
+                $authors = $article['author'] ?? 'Unknown';
+
+
+                if (!is_array($authors)) {
+                    $authors = array_map('trim', explode(',', $authors)); // Split multiple authors by commas
+                }
+
+                foreach ($authors as $authorName) {
+                    if (!empty($authorName)) {
+                        $author = Author::firstOrCreate(['name' => $authorName]);
+                        $newArticle->authors()->attach($author->id);
+                    }
+                }
             }
         }
 
         $url = env('GAURDIAN_API_URL') . env('GAURDIAN_API_KEY');
         $response = Http::get($url);
 
-        $fetchedArticles = $response->json()['response']['results']; 
+        $fetchedArticles = $response->json()['response']['results'];
 
         foreach ($fetchedArticles as $article) {
             if (isset($article['webTitle'], $article['webUrl'], $article['webPublicationDate'], $article['sectionName'])) {
@@ -62,9 +77,19 @@ class ArticleController extends Controller
                     ['name' => $article['sectionName'] ?? 'general'],
                 );
 
+
+                if (isset($article['author'])) {
+                    if(!is_array($article['author'])) {
+                        $article['author'] = array_map('trim', explode(',', $article['author'])); 
+                    }
+                }
+
+                $authors = Author::firstOrCreate(
+                    ['name' => $article['author'] ?? 'Unknown'],
+                );
+                
                 $newArticle = Article::create([
                     'title' => $article['webTitle'],
-                    'author' => $article['sectionName'],
                     'description' => $article['webTitle'],
                     'url' => $article['webUrl'],
                     'publishedAt' => $article['webPublicationDate'],
@@ -73,6 +98,8 @@ class ArticleController extends Controller
                 ]);
 
                 $newArticle->categories()->attach($category->id);
+
+                $newArticle->authors()->attach($authors);
             }
         }
 
@@ -82,11 +109,12 @@ class ArticleController extends Controller
 
         $items = (array) $xml->channel;
 
+        // dd($items);
+
         foreach ($items['item'] as $article) {
             if (isset($article->title, $article->link, $article->pubDate)) {
                 $newArticle = Article::create([
                     'title' => $article->title,
-                    'author' => 'New York Times',
                     'description' => $article->description,
                     'url' => $article->link,
                     'publishedAt' => $article->pubDate,
@@ -94,15 +122,20 @@ class ArticleController extends Controller
                     'provider' => 'nytimes',
                 ]);
             }
-            if(isset($article->category)){
+            if (isset($article->category)) {
                 foreach ($article->category as $categoryName) {
                     $category = Category::firstOrCreate(
                         ['name' => $categoryName],
                     );
-    
+
                     $newArticle->categories()->attach($category->id);
                 }
             }
+            $authors = Author::firstOrCreate(
+                ['name' => $article['author'] ?? 'Unknown'],
+            );
+            $newArticle->authors()->attach($authors);
+
         }
     }
 

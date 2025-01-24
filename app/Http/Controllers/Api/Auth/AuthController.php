@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
+use App\Models\Author;
 use App\Models\Category;
 use App\Models\User;
 use App\Notifications\PasswordResetLink;
@@ -36,8 +37,24 @@ class AuthController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
             'phone' => 'nullable|string|min:10|max:10',
-            'preferred_categories' => 'nullable|array', 
-            'preferred_categories.*' => 'string|exists:categories,name',
+            'preferred_categories' => 'nullable|array',
+            'preferred_categories.*' => [
+                'string',
+                function ($attribute, $value, $fail) {
+                    if (!Category::where('name', $value)->exists()) {
+                        $fail("The selected category name ($value) is invalid.");
+                    }
+                }
+            ],
+            'preferred_authors' => 'nullable|array',
+            'preferred_authors.*' => [
+                'string',
+                function ($attribute, $value, $fail) {
+                    if (!Author::where('name', $value)->exists()) {
+                        $fail("The selected author name ($value) is invalid.");
+                    }
+                }
+            ],
         ]);
 
         $user = User::create([
@@ -49,13 +66,18 @@ class AuthController extends Controller
 
         if (!empty($data['preferred_categories'])) {
             $categoryIds = Category::whereIn('name', $data['preferred_categories'])->pluck('id')->toArray();
-    
+
             $user->preferredCategories()->sync($categoryIds);
+        }
+
+        if (!empty($data['preferred_authors'])) {
+            $authorIds = Author::whereIn('name', $data['preferred_authors'])->pluck('id')->toArray();
+            $user->preferredAuthors()->sync($authorIds);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        $user = new UserResource($user->load('preferredCategories'));
+        $user = new UserResource($user->load('preferredCategories', 'preferredAuthors'));
 
         return response()->json([
             'access_token' => $token,
