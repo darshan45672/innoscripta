@@ -383,30 +383,59 @@ class ArticleController extends Controller
     public function preferences(Request $request)
     {
         $userId = Auth::id();
-
         $cacheKey = "user_{$userId}_preferences";
 
-        return Cache::remember($cacheKey, 60, function () use ($userId) {
-
+        return Cache::remember($cacheKey, 1, function () use ($userId, $request) {
             $user = User::findOrFail($userId)->load('preferredCategories', 'preferredAuthors', 'preferredSources');
 
             $categoryIds = $user->preferredCategories->pluck('id');
             $authorIds = $user->preferredAuthors->pluck('id');
             $sourceIds = $user->preferredSources->pluck('id');
 
-            return Article::where(function ($query) use ($categoryIds, $authorIds, $sourceIds) {
-                $query->whereHas('categories', function ($q) use ($categoryIds) {
-                    $q->whereIn('categories.id', $categoryIds);
-                })
-                ->orWhereHas('authors', function ($q) use ($authorIds) {
-                    $q->whereIn('authors.id', $authorIds);
-                })
-                ->orWhereHas('source', function ($q) use ($sourceIds) {
-                    $q->whereIn('news_sources.id', $sourceIds);
+            $query = Article::query();
+
+            if ($request->has('source')) {
+                $sourceName = $request->input('source');
+                $sourceIds = NewsSource::where('name', $sourceName)->pluck('id');
+
+                if ($sourceIds->isEmpty()) {
+                    return response()->json(['message' => 'No articles found for the specified source'], 404);
+                }
+
+                $query->whereHas('source', fn($q) => $q->whereIn('news_sources.id', $sourceIds));
+            }
+
+            if ($request->has('category')) {
+                $categoryName = $request->input('category');
+                $categoryIds = Category::where('name', $categoryName)->pluck('id');
+
+                if ($categoryIds->isEmpty()) {
+                    return response()->json(['message' => 'No articles found for the specified category'], 404);
+                }
+
+                $query->whereHas('categories', fn($q) => $q->whereIn('categories.id', $categoryIds));
+            }
+
+            if ($request->has('author')) {
+                $authorName = $request->input('author');
+                $authorIds = Author::where('name', $authorName)->pluck('id');
+
+                if ($authorIds->isEmpty()) {
+                    return response()->json(['message' => 'No articles found for the specified author'], 404);
+                }
+
+                $query->whereHas('authors', fn($q) => $q->whereIn('authors.id', $authorIds));
+            }
+
+            if (!$request->has(['source', 'category', 'author'])) {
+                $query->where(function ($q) use ($categoryIds, $authorIds, $sourceIds) {
+                    $q->whereHas('categories', fn($q) => $q->whereIn('categories.id', $categoryIds))
+                        ->orWhereHas('authors', fn($q) => $q->whereIn('authors.id', $authorIds))
+                        ->orWhereHas('source', fn($q) => $q->whereIn('news_sources.id', $sourceIds));
                 });
-            })
-            ->with(['categories', 'authors', 'source'])
-            ->get();
+            }
+
+            return $query->with(['categories', 'authors', 'source'])->get();
         });
     }
 }
