@@ -23,5 +23,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/preferences', [ArticleController::class, 'preferences'])->name('preferences')->middleware('throttle:api');
 });
 
-Route::get('/articles', [ArticleController::class, 'index'])->middleware(['throttle:api']);
-Route::get('/articles/{article}', [ArticleController::class, 'show'])->middleware(['throttle:api']);
+Route::get('/articles', [ArticleController::class, 'index'])->middleware(['throttle:api'])->name('articles.index');
+Route::get('/articles/{article}', [ArticleController::class, 'show'])->middleware(['throttle:api'])->name('articles.show');
