@@ -259,4 +259,74 @@ class AuthController extends Controller
             $user->preferredSources()->sync($data['preferred_sources']);
         }
     }
+
+    /**
+     * Update the authenticated user's profile.
+     *
+     * This method validates the incoming request data, updates the user's profile,
+     * synchronizes the user's preferences, and returns a JSON response with the updated user data.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     */
+    public function update(){
+        $data = request()->validate([
+            'name' => 'required|string|min:3|max:255',
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore(Auth::id())],
+            'phone' => 'nullable|string|min:10|max:10',
+            'preferred_categories' => 'nullable|array',
+            'preferred_categories.*' => ['integer', Rule::exists('categories', 'id')],
+            'preferred_authors' => 'nullable|array',
+            'preferred_authors.*' => ['integer', Rule::exists('authors', 'id')],
+            'preferred_sources' => 'nullable|array',
+            'preferred_sources.*' => ['integer', Rule::exists('news_sources', 'id')],
+        ]);
+
+        $user = User::findOrFail(Auth::id());
+
+        $user->update($data);
+
+        $this->syncPreferences($user, $data);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User updated successfully',
+            'user' => new UserResource($user->load(['preferredCategories', 'preferredAuthors', 'preferredSources'])),
+        ]);
+    }
+
+    /**
+     * Delete the authenticated user and their related data.
+     *
+     * This method deletes the authenticated user along with their preferred categories,
+     * preferred authors, preferred sources, and API tokens. If the deletion is successful,
+     * it returns a JSON response with a success message. If an error occurs, it catches
+     * the exception and returns a JSON response with an error message.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function delete(){
+        try {
+            $user = User::findOrFail(Auth::id());
+
+            $user->preferredCategories()->detach();
+            $user->preferredAuthors()->detach();
+            $user->preferredSources()->detach();
+            $user->tokens()->delete();
+
+            $user->delete();
+    
+            return response()->json([
+                'status' => 'success',
+                'message' => 'User deleted successfully',
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to delete user. Please try again later.',
+            ], 500);
+        }
+    }
 }
