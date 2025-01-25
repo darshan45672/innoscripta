@@ -25,3 +25,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::get('/articles', [ArticleController::class, 'index'])->middleware(['throttle:api'])->name('articles.index');
 Route::get('/articles/{article}', [ArticleController::class, 'show'])->middleware(['throttle:api'])->name('articles.show');
+Route::get('/authors', [ArticleController::class, 'authors'])->middleware(['throttle:api'])->name('authors.index');
+Route::get('/categories', [ArticleController::class, 'categories'])->middleware(['throttle:api'])->name('categories.index');
+Route::get('/sources', [ArticleController::class, 'sources'])->middleware(['throttle:api'])->name('sources.index');
