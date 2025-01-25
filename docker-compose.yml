@@ -40,7 +40,7 @@ services:
       - 80:80
       - 443:443
     volumes:
-      - ./laravel-best:/var/www/html
+      - ./Application:/var/www/html
       - ./Caddyfile:/etc/caddy/Caddyfile
     networks:
       - docker-network
