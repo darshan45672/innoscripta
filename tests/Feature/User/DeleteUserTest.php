@@ -40,11 +40,9 @@ class DeleteUserTest extends TestCase
 
     public function test_handles_user_not_found_exception_gracefully()
     {
-        // Create and authenticate a user
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        // Delete the authenticated user to simulate "not found"
         $user->delete();
 
         $response = $this->deleteJson(route('delete'));
@@ -60,10 +58,8 @@ class DeleteUserTest extends TestCase
 {
     Sanctum::actingAs(User::factory()->create());
 
-    // Simulate the exception during deletion
     $user = User::findOrFail(Auth::id());
 
-    // Throwing the exception manually to simulate a deletion failure
     DB::shouldReceive('transaction')->andThrow(new \Exception('Deletion failed'));
 
     $response = $this->deleteJson(route('delete'));
