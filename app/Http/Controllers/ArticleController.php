@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ArticleResource;
+use App\Http\Resources\AuthorResource;
+use App\Http\Resources\CategoryResource;
+use App\Http\Resources\NewsSourceResource;
 use App\Http\Resources\UserResource;
 use App\Models\Article;
 use App\Models\Author;
@@ -438,4 +441,29 @@ class ArticleController extends Controller
             return $query->with(['categories', 'authors', 'source'])->get();
         });
     }
+    
+    public function authors(){
+        $authors = Cache::remember('authors', 5, function () {
+            return Author::all();
+        });
+
+        return response()->json(new AuthorResource($authors));
+    }
+
+    public function categories(){
+        $categories = Cache::remember('categories', 60, function () {
+            return Category::all();
+        });
+
+        return response()->json(new CategoryResource($categories));
+    }
+
+    public function sources(){
+        $sources = Cache::remember('sources', 60, function () {
+            return NewsSource::all();
+        });
+
+        return response()->json(new NewsSourceResource($sources));
+    }
 }
+
