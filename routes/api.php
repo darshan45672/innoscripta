@@ -17,6 +17,8 @@ Route::post('/password/reset', [AuthController::class, 'resetPassword'])->middle
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user'])->name('user')->middleware('throttle:api');
+    Route::post('/user/update', [AuthController::class, 'update'])->name('update')->middleware('throttle:api');
+    Route::delete('/user/delete', [AuthController::class, 'delete'])->name('delete')->middleware('throttle:api');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/preferences', [ArticleController::class, 'preferences'])->name('preferences')->middleware('throttle:api');
 });
