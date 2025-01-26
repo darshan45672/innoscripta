@@ -84,4 +84,11 @@ Setting up [Docker Environment](Docker.md)
 9. ### Split the Terminal or Open New Terminal to run cron jobs
     ```
     php artisan schedule:work
-    ``` 
+    ```
+
+## API Documentation
+
+### APIs Available
+
+1. 
+
