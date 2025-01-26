@@ -169,7 +169,7 @@ class ArticleController extends Controller
      */
     private function fetchNewsAPIArticles()
     {
-        $url = env('NEWS_API_URL') . env('NEWS_API_KEY');
+        $url = env('NEWS_API_KEY_URL');
         $response = Http::get($url);
 
         if (!$response->successful()) {
@@ -215,7 +215,7 @@ class ArticleController extends Controller
      */
     private function fetchGuardianArticles()
     {
-        $url = env('GAURDIAN_API_URL') . env('GAURDIAN_API_KEY');
+        $url = env('GAURDIAN_API_KEY_URL');
         $response = Http::get($url);
 
         if (!$response->successful()) {
