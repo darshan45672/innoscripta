@@ -103,4 +103,111 @@ Setting up [Docker Environment](Docker.md)
      | `provider`| ```api/articles?provider=newsapi```| This will return all the articles whose provider api `newsapi`|
      |`source` |```api/articles?source=CNN```| This will return all the articles whose provider api `newsapi`|
      |`categories`|```api/articles?categories=Food```|This will return all the articles whose categories is `Food`|
+     |`from`|```api/articles?from=2025-01-25```|This will return all the articles which are published from 25-01-2025|
+     |`to`|```api/articles?to=2025-01-26```|This will return all the articles which are published till 26-01-2025|
+
+     + API Response Structure
+     
+       ##### Root Object
+
+       | Key               | Type       | Description                                                                                   |
+       |--------------------|------------|-----------------------------------------------------------------------------------------------|
+       | `current_page`     | Integer    | The current page of the paginated response.                                                   |
+       | `data`             | Array      | An array containing the paginated items. Can be empty if no data is available.               |
+       | `first_page_url`   | String     | The URL of the first page in the pagination.                                                  |
+       | `from`             | Integer    | The starting index of the items in the current page.                                          |
+       | `last_page`        | Integer    | The total number of pages available.                                                         |
+       | `last_page_url`    | String     | The URL of the last page in the pagination.                                                  |
+       | `links`            | Array      | A list of pagination links with their labels, URLs, and active status.                       |
+       | `next_page_url`    | String     | The URL for the next page, or `null` if there is no next page.                                |
+       | `path`             | String     | The base path of the API without query parameters.                                           |
+       | `per_page`         | Integer    | The number of items per page.                                                                |
+       | `prev_page_url`    | String     | The URL for the previous page, or `null` if there is no previous page.                       |
+       | `to`               | Integer    | The ending index of the items in the current page.                                           |
+       | `total`            | Integer    | The total number of items across all pages.                                                  |
+
+       ##### links Array Object
+
+       | Key        | Type    | Description                                                                 |
+       |------------|---------|-----------------------------------------------------------------------------|
+       | `url`      | String  | The URL of the pagination link, or `null` if it's a disabled link.          |
+       | `label`    | String  | The label for the pagination link, e.g., page number or navigation text.    |
+       | `active`   | Boolean | Whether the link represents the current active page (`true` or `false`).    |
+
+       ##### `data` (Array of Articles)
+
+       Each item in the `data` array is an object with the following keys:
+
+       | Key            | Type        | Description                                                      |
+       |----------------|-------------|------------------------------------------------------------------|
+       | `id`           | Integer     | Unique identifier for the article.                             |
+       | `title`        | String      | Title of the article.                                          |
+       | `description`  | String      | Brief summary of the article.                                  |
+       | `url`          | String (URL)| Link to the full article.                                      |
+       | `publishedAt`  | String (ISO)| Date and time when the article was published, in ISO 8601 format. |
+       | `urlToImage`   | String (URL)| URL of the article's featured image.                           |
+       | `provider`     | String      | The API provider that sourced this article.                   |
+       | `news_source`  | String      | Name of the news source that published the article.            |
+       | `categories`   | Array       | Categories assigned to the article (e.g., `general`).         |
+       | `authors`      | Array       | List of authors who contributed to the article.  |
+       
+     + API Response
+
+       ```
+       api/articles?search=Aston&provider=The Guardian&source=Sport&categories=Football&from=2025-01-25&to=2025-01-26
+       ```
+
+       respone
+
+       ```
+       {
+       "current_page": 1,
+       "data": [
+        {
+            "id": 17,
+            "title": "Aston Villa v West Ham United: Premier League – live",
+            "description": "Aston Villa v West Ham United: Premier League – live",
+            "content": "Aston Villa v West Ham United: Premier League – live",
+            "url": "https://www.theguardian.com/football/live/2025/jan/26/aston-villa-v-west-ham-united-premer-league-live-score-updates",
+            "publishedAt": "2025-01-26T16:27:04.000000Z",
+            "urlToImage": "",
+            "provider": "The Guardian",
+            "news_source": "Sport",
+            "categories": [
+                "Football"
+            ],
+            "authors": [
+                "Anonymous"
+            ]
+        }
+       ],
+       "first_page_url": "http://127.0.0.1:8000/api/articles?page=1",
+       "from": 1,
+       "last_page": 1,
+       "last_page_url": "http://127.0.0.1:8000/api/articles?page=1",
+       "links": [
+        {
+            "url": null,
+            "label": "&laquo; Previous",
+            "active": false
+        },
+        {
+            "url": "http://127.0.0.1:8000/api/articles?page=1",
+            "label": "1",
+            "active": true
+        },
+        {
+            "url": null,
+            "label": "Next &raquo;",
+            "active": false
+        }
+       ],
+       "next_page_url": null,
+       "path": "http://127.0.0.1:8000/api/articles",
+       "per_page": 10,
+       "prev_page_url": null,
+       "to": 1,
+       "total": 1
+       }
+       ```
 
