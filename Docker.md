@@ -14,3 +14,7 @@
    GAURDIAN_API_KEY_URL=https://content.guardianapis.com/search?api-key=<your_api_key>
    NYT_URL=https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml
    ```
+4. ### Bring up the container
+   ```
+   docker-compose up --build
+   ```
