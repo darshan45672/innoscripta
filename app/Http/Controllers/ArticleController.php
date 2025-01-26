@@ -96,7 +96,8 @@ class ArticleController extends Controller
             $filters = [
                 'search' => fn($q, $value) => $q->where(function ($q) use ($value) {
                     $q->where('title', 'like', "%{$value}%")
-                        ->orWhere('description', 'like', "%{$value}%");
+                        ->orWhere('description', 'like', "%{$value}%")
+                        ->orWhere('content', 'like', "%{$value}%");
                 })->orWhereHas('authors', fn($authorQuery) => 
                     $authorQuery->where('name', 'like', "%{$value}%")
                 ),
@@ -122,6 +123,10 @@ class ArticleController extends Controller
 
             return $query->paginate(100);
         });
+
+        if ($articles->isEmpty()) {
+            return response()->json(['message' => 'No articles found'], 404);
+        }
 
         $articles->getCollection()->transform(fn($article) => new ArticleResource([
             'id' => $article->id,
