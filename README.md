@@ -90,5 +90,17 @@ Setting up [Docker Environment](Docker.md)
 
 ### APIs Available
 
-1. 
+1. #### Article
+   - ##### Get All Articles with filters
+     
+     ```
+     api/articles
+     ```
+     | Parameter           | Values (example)                                                | Description                               |
+     |---------------------|-----------------------------------------------------------------|-------------------------------------------|
+     | No Parameter|  ```api/articles```| This will return all articles with thier associated categories, authors and source |
+     | `search`| ```api/articles?search=Trump```| This will return all the articles which have `Trump` in thier `title`, `description`, `content`, `author`|
+     | `provider`| ```api/articles?provider=newsapi```| This will return all the articles whose provider api `newsapi`|
+     |`source` |```api/articles?source=CNN```| This will return all the articles whose provider api `newsapi`|
+     |`categories`|```api/articles?categories=Food```|This will return all the articles whose categories is `Food`|
 
