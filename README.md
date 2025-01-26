@@ -19,6 +19,8 @@ A RESTful API for a news aggregator service built using Laravel. This applicatio
 - **Database**: SQLite (default laravel 11 DB )
 - **Testing**: Feature tests for reliability.
 
+Setting up [Docker Environment](Docker.md)
+
 # Setting Up The Local Development Environment
 
 1. ### Clone the repository
