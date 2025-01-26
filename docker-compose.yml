@@ -1,86 +1,24 @@
+networks:
+  application:
+    driver: bridge
 services:
   app:
     build:
-      context: ./Application
+      context: .
       dockerfile: Dockerfile
-    restart: unless-stopped
-    networks:
-        - docker-network
+    container_name: mybackend
     ports:
-      - 9000:9000
-    depends_on:
-      - db
-
-  queue-worker:
-    build:
-      context: ./Application
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    networks:
-      - docker-network
-    depends_on:
-      - db
-    command: php artisan queue:work
-  
-  scheduler:
-    build:
-      context: ./Application
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    networks:
-      - docker-network
-    depends_on:
-      - db
-      - redis
-    command: php artisan schedule:work
-  
-  caddy:
-    image: caddy:latest
-    ports:
-      - 80:80
-      - 443:443
+      - 8000:8000
     volumes:
-      - ./Application:/var/www/html
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./:/app
     networks:
-      - docker-network
-    depends_on:
-      - app
-
-  db:
-    image: bitnami/postgresql:16.3.0
-    platform: linux/amd64
-    ports:
-      - 5432:5432
-    restart: always
-    volumes:
-      - db-data:/bitnami/postgresql
+      - application
     environment:
-      - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
-      - POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME}
-      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
-    networks:
-      - docker-network
+      - DB_CONNECTION=sqlite
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        composer install
+        php artisan migrate
+        php artisan serve --host=0.0.0.0 --port=8000
 
-  redis:
-    image: bitnami/redis:7.2
-    platform: linux/amd64
-    ports:
-      - 6379:6379
-    restart: always
-    volumes:
-      - redis-data:/bitnami/redis/data
-    environment:
-      - ALLOW_EMPTY_PASSWORD=no
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
-    networks:
-      - docker-network
-
-volumes:
-  db-data:
-  redis-data:
-
-networks:
-  docker-network:
-    driver: bridge
