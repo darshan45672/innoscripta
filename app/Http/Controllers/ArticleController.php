@@ -96,11 +96,17 @@ class ArticleController extends Controller
             $filters = [
                 'search' => fn($q, $value) => $q->where(function ($q) use ($value) {
                     $q->where('title', 'like', "%{$value}%")
-                        ->orWhere('author', 'like', "%{$value}%")
                         ->orWhere('description', 'like', "%{$value}%");
-                }),
+                })->orWhereHas('authors', fn($authorQuery) => 
+                    $authorQuery->where('name', 'like', "%{$value}%")
+                ),
                 'provider' => fn($q, $value) => $q->where('provider', 'like', "%{$value}%"),
-                'source' => fn($q, $value) => $q->where('source_name', 'like', "%{$value}%"),
+                'source' => fn($q, $value) => $q->whereHas('source', fn($sourceQuery) =>
+                    $sourceQuery->where('name', 'like', "%{$value}%")
+                ),
+                'categories' => fn($q, $value) => $q->whereHas('categories', fn($categoryQuery) =>
+                    $categoryQuery->whereIn('name', (array) $value)
+                ),
                 'from' => fn($q, $value) => $q->where('publishedAt', '>=', $value),
                 'to' => fn($q, $value) => $q->where('publishedAt', '<=', $value),
                 'date_range' => fn($q, $value) => $q->whereBetween('publishedAt', $value),
