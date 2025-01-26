@@ -6,9 +6,33 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: mybackend
+    container_name: backend
     ports:
       - 8000:8000
+    volumes:
+      - ./:/app
+    networks:
+      - application
+    environment:
+      - DB_CONNECTION=sqlite
+    depends_on:
+      - scheduler
+      - queue
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        composer install
+        composer update
+        php artisan key:generate
+        php artisan migrate:fresh
+        php artisan serve --host=0.0.0.0 --port=8000
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scheduler
+    restart: unless-stopped
     volumes:
       - ./:/app
     networks:
@@ -18,13 +42,16 @@ services:
     entrypoint: ['/bin/sh', '-c']
     command:
       - |
-        php artisan serve --host=0.0.0.0 --port=8000
-        
-  scheduler:
+        php artisan schedule:work
+  
+  queue:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: scheduler
+
+    container_name: queue_worker
+
+    restart: unless-stopped
 
     volumes:
       - ./:/app

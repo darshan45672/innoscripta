@@ -121,7 +121,7 @@ class ArticleController extends Controller
                 }
             }
 
-            return $query->paginate(100);
+            return $query->paginate(10);
         });
 
         if ($articles->isEmpty()) {
@@ -132,6 +132,7 @@ class ArticleController extends Controller
             'id' => $article->id,
             'title' => $article->title,
             'description' => $article->description,
+            'content' => $article->content,
             'url' => $article->url,
             'publishedAt' => $article->publishedAt,
             'urlToImage' => $article->urlToImage,
