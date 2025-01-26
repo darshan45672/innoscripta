@@ -8,6 +8,11 @@ RUN php -m | grep mbstring
 WORKDIR /app
 COPY . /app
 RUN composer install
+RUN composer update
+
+RUN php artisan key:generate
+
+RUN php artisan migrate:fresh
 
 CMD php artisan serve --host=0.0.0.0 --port=8000
 EXPOSE 8000
