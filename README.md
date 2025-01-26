@@ -210,4 +210,63 @@ Setting up [Docker Environment](Docker.md)
        "total": 1
        }
        ```
+   - ##### Show Particular Article
+     ```
+     api/articles/{id}
+     ```
 
+     + ##### API Response Structure
+
+       ## Root Object
+       | Key              | Type     | Description                                                                                     |
+       |-------------------|----------|-------------------------------------------------------------------------------------------------|
+       | `id`             | Integer  | The unique identifier for the article.                                                         |
+       | `title`          | String   | The title of the article.                                                                      |
+       | `description`    | String   | A brief description or summary of the article.                                                 |
+       | `url`            | String   | The URL link to the full article.                                                              |
+       | `urlToImage`     | String   | The URL to the image associated with the article.                                              |
+       | `publishedAt`    | String   | The publication date and time of the article in ISO 8601 format.                               |
+       | `content`        | String   | The main content of the article, truncated if necessary.                                       |
+       | `provider`       | String   | The name of the provider or API service that supplied the article.                             |
+       | `news_source_id` | Integer  | The unique identifier for the news source.                                                     |
+       | `authors`        | Array    | An array of objects representing the authors of the article.                                   |
+       | `categories`     | Array    | An array of objects representing the categories the article belongs to.                        |
+       | `source`         | Object   | An object representing the source of the article.                                              |
+
+       ##### `authors` Array Object
+
+       | Key        | Type     | Description                                                                                     |
+       |------------|----------|-------------------------------------------------------------------------------------------------|
+       | `id`       | Integer  | The unique identifier for the author.                                                          |
+       | `name`     | String   | The name of the author.                                                                         |
+       | `pivot`    | Object   | A pivot object representing the relationship between the article and the author.                |
+
+       ##### `pivot` Object (within `authors`)
+       | Key           | Type     | Description                                                                                 |
+       |---------------|----------|---------------------------------------------------------------------------------------------|
+       | `article_id`  | Integer  | The unique identifier for the article.                                                      |
+       | `author_id`   | Integer  | The unique identifier for the author.                                                       |
+
+       ##### `categories` Array Object
+
+       | Key        | Type     | Description                                                                                     |
+       |------------|----------|-------------------------------------------------------------------------------------------------|
+       | `id`       | Integer  | The unique identifier for the category.                                                        |
+       | `name`     | String   | The name of the category.                                                                       |
+       | `pivot`    | Object   | A pivot object representing the relationship between the article and the category.              |
+
+       ##### `pivot` Object (within `categories`)
+       | Key           | Type     | Description                                                                                 |
+       |---------------|----------|---------------------------------------------------------------------------------------------|
+       | `article_id`  | Integer  | The unique identifier for the article.                                                      |
+       | `category_id` | Integer  | The unique identifier for the category.                                                     |
+
+       ##### `source` Object
+
+       | Key   | Type     | Description                                                                                     |
+       |-------|----------|-------------------------------------------------------------------------------------------------|
+       | `id`  | Integer  | The unique identifier for the source.                                                          |
+       | `name`| String   | The name of the source.                                                                         |
+     
+2. #### User
+   - ##### Authentication
