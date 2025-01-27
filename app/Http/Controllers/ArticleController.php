@@ -91,8 +91,8 @@ class ArticleController extends Controller
             'provider' => 'nullable|string|max:255',
             'source' => 'nullable|string|max:255',
             'categories' => 'nullable|string|max:255',
-            'from' => 'nullable|date|before_or_equal:to',
-            'to' => 'nullable|date|after_or_equal:from',
+            'from' => 'nullable|date',
+            'to' => 'nullable|date',
             'date_range' => 'nullable|array|size:2',
             'date_range.*' => 'date',
         ];
