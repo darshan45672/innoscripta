@@ -3,6 +3,8 @@
 
 ### APIs Available
 
+#### Complete API Description is in (Poastman)[https://documenter.getpostman.com/view/29216336/2sAYQggoM9]
+
 1. #### Article
    - ##### Get All Articles with filters
      
@@ -790,3 +792,118 @@
          "message": "Logged out"
          }
          ```
+
+       + ##### Forgot Password 
+
+         ```
+         POST /api/password/email
+         ```
+
+         - ##### Request Structure
+           ##### Request Header
+
+           | Key            | Value           | Description                                  |
+           |----------------|-----------------|----------------------------------------------|
+           | `Content-Type` | `application/json` | Specifies the content type as JSON.         |
+           | `Accept`       | `application/json` | Indicates that the client expects a JSON response. |
+           | `Authorization`| `{{token}}`        | Bearer token for authentication. Replace `{{token}}` with the actual token. |
+
+           ##### Example Request Header
+
+           ```json
+           [
+           {
+           "key": "Content-Type",
+           "value": "application/json",
+           "enabled": true,
+           "type": "text",
+           "uuid": "23ae6525-3917-4c3d-8ca5-42e6a3deb6fd"
+           },
+           {
+           "key": "Accept",
+           "value": "application/json",
+           "enabled": true,
+           "type": "text",
+           "uuid": "8b19a5dd-dbf2-48bb-a1de-b1c11888660a"
+           },
+           {
+           "key": "Authorization",
+           "value": "{{token}}",
+           "enabled": true,
+           "type": "text",
+           "uuid": "f623027b-489b-48a6-8242-625f81701049"
+           }
+           ]
+           ```
+
+        - ##### Request Body
+          ## Request Body
+
+          ```json
+          {
+          "email": "admin@admin.com"
+          }
+
+          ```
+
+       + ##### Reset Password 
+
+         ```
+         POST /api/password/reset/
+         ```
+
+         - ##### Request Structure
+           ##### Request Header
+
+           ```json
+           [
+           {
+           "key": "Accept",
+           "value": "application/json",
+           "description": null,
+           "enabled": true,
+           "type": "text",
+           "uuid": "70db3f99-64a6-494c-bad1-68be9c8228f7"
+           },
+           {
+           "key": "Content-Type",
+           "value": "application/json",
+           "description": null,
+           "enabled": true,
+           "type": "text",
+           "uuid": "0542b5c1-32fe-4701-9862-6b1aff6e3a6c"
+           }
+           ]
+           ```
+
+           #### Request Parameter
+
+           ```json
+           [
+           {
+           "key": "email",
+           "value": "admin%40admin.com",
+           "equals": true,
+           "description": null,
+           "enabled": true,
+           "uuid": "1a005010-cae0-4118-b413-1b817cb9e7f4"
+           },
+           {
+            "key": "expires",
+            "value": "1737792639",
+            "equals": true,
+            "description": null,
+            "enabled": true,
+            "uuid": "9d5747f3-bc56-4668-ab67-7f4393fe1490"
+           },
+           {
+            "key": "signature",
+            "value": "023a87da970920e451efabb2332836e6fe84eb5612dc01358ebd0d234afad07f",
+            "equals": true,
+            "description": null,
+            "enabled": true,
+            "uuid": "16a210f6-8a9c-4c0e-88d4-fc94e1247ae6"
+              }
+           ]
+           ```
+           
