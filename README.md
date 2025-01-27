@@ -20,6 +20,9 @@ A RESTful API for a news aggregator service built using Laravel. This applicatio
 - **Testing**: Feature tests for reliability.
 
 Setting up [Docker Environment](Docker.md)
+<br/>
+
+For [API Documentation](APIDocs.md)
 
 # Setting Up The Local Development Environment
 
