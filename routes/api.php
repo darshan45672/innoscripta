@@ -13,6 +13,7 @@ Route::get('/user', function (Request $request) {
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/login', [AuthController::class, 'login'])->name('login')->middleware('throttle:api');
 Route::post('/password/email', [AuthController::class, 'forgotPassword'])->name('password.email');
+
 Route::post('/password/reset', [AuthController::class, 'resetPassword'])->middleware('signed')->name('password.reset');
 
 Route::middleware('auth:sanctum')->group(function () {
