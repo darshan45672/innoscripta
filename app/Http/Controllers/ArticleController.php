@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Validator;
 
 class ArticleController extends Controller
 {
@@ -85,9 +86,23 @@ class ArticleController extends Controller
      */
     public function index(Request $request)
     {
-        /**
-         * Generate a unique cache key and retrieve/store articles in cache.
-         */
+        $rules = [
+            'search' => 'nullable|string|max:255',
+            'provider' => 'nullable|string|max:255',
+            'source' => 'nullable|string|max:255',
+            'categories' => 'nullable|string|max:255',
+            'from' => 'nullable|date|before_or_equal:to',
+            'to' => 'nullable|date|after_or_equal:from',
+            'date_range' => 'nullable|array|size:2',
+            'date_range.*' => 'date',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
         $cacheKey = 'articles_' . md5(json_encode($request->all()));
 
         $articles = Cache::remember($cacheKey, 6, function () use ($request) {
@@ -98,15 +113,21 @@ class ArticleController extends Controller
                     $q->where('title', 'like', "%{$value}%")
                         ->orWhere('description', 'like', "%{$value}%")
                         ->orWhere('content', 'like', "%{$value}%");
-                })->orWhereHas('authors', fn($authorQuery) => 
-                    $authorQuery->where('name', 'like', "%{$value}%")
-                ),
+                })->orWhereHas(
+                        'authors',
+                        fn($authorQuery) =>
+                        $authorQuery->where('name', 'like', "%{$value}%")
+                    ),
                 'provider' => fn($q, $value) => $q->where('provider', 'like', "%{$value}%"),
-                'source' => fn($q, $value) => $q->whereHas('source', fn($sourceQuery) =>
+                'source' => fn($q, $value) => $q->whereHas(
+                    'source',
+                    fn($sourceQuery) =>
                     $sourceQuery->where('name', 'like', "%{$value}%")
                 ),
-                'categories' => fn($q, $value) => $q->whereHas('categories', fn($categoryQuery) =>
-                    $categoryQuery->whereIn('name', (array) $value)
+                'categories' => fn($q, $value) => $q->whereHas(
+                    'categories',
+                    fn($categoryQuery) =>
+                    $categoryQuery->whereIn('name', strpos($value, ',') !== false ? explode(',', $value) : [$value])
                 ),
                 'from' => fn($q, $value) => $q->where('publishedAt', '>=', $value),
                 'to' => fn($q, $value) => $q->where('publishedAt', '<=', $value),
@@ -115,13 +136,16 @@ class ArticleController extends Controller
 
             foreach ($filters as $key => $callback) {
                 if ($key === 'date_range' && $request->filled(['from', 'to'])) {
-                    $callback($query, [$request->input('from'), $request->input('to')]);
+                    $from = $request->input('from');
+                    $to = $request->input('to');
+                    $callback($query, [$from, $to]);
                 } elseif ($request->filled($key)) {
-                    $callback($query, $request->input($key));
+                    $keyValue = $request->input($key);
+                    $callback($query, $keyValue);
                 }
             }
 
-            return $query->paginate(10);
+            return $query->paginate(20);
         });
 
         if ($articles->isEmpty()) {
@@ -144,7 +168,6 @@ class ArticleController extends Controller
 
         return response()->json($articles);
     }
-
     /**
      * Display the specified article.
      */
@@ -453,8 +476,9 @@ class ArticleController extends Controller
             return $query->with(['categories', 'authors', 'source'])->get();
         });
     }
-    
-    public function authors(){
+
+    public function authors()
+    {
         $authors = Cache::remember('authors', 5, function () {
             return Author::all();
         });
@@ -462,7 +486,8 @@ class ArticleController extends Controller
         return response()->json(new AuthorResource($authors));
     }
 
-    public function categories(){
+    public function categories()
+    {
         $categories = Cache::remember('categories', 60, function () {
             return Category::all();
         });
@@ -470,7 +495,8 @@ class ArticleController extends Controller
         return response()->json(new CategoryResource($categories));
     }
 
-    public function sources(){
+    public function sources()
+    {
         $sources = Cache::remember('sources', 60, function () {
             return NewsSource::all();
         });
