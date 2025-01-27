@@ -117,8 +117,10 @@ class GetArticlesTest extends TestCase
     {
         $response = $this->getJson(route('articles.index'));
 
-        $response->assertStatus(200)
-            ->assertJson(['data' => []]);
+        $response->assertStatus(404)
+            ->assertJson([
+                'message' => 'No articles found'
+            ]);
     }
 
     public function test_ignores_invalid_filter_parameters()
