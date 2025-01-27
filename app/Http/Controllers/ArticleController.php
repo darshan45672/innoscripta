@@ -66,6 +66,7 @@ class ArticleController extends Controller
         $this->fetchNYTArticles();
     }
 
+    
     /**
      * Display a listing of the articles.
      *
