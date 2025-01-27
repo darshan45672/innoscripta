@@ -41,7 +41,7 @@ class DatabaseSeeder extends Seeder
             NewsSource::factory()->create(['name' => 'Business Weekly']),
         ];
 
-        for ($i = 0; $i < 2000; $i++) {
+        for ($i = 0; $i < 200; $i++) {
             $si = $i + 1;
             $article = Article::factory()->create([
                 'news_source_id' => $newsSources[array_rand($newsSources)]->id,
