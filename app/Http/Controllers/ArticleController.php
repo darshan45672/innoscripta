@@ -424,6 +424,12 @@ class ArticleController extends Controller
         $userId = Auth::id();
         $cacheKey = "user_{$userId}_preferences";
 
+        $validatedData = $request->validate([
+            'source' => 'string|nullable',
+            'category' => 'string|nullable', 
+            'author' => 'string|nullable', 
+        ]);
+
         return Cache::remember($cacheKey, 1, function () use ($userId, $request) {
             $user = User::findOrFail($userId)->load('preferredCategories', 'preferredAuthors', 'preferredSources');
 
@@ -488,6 +494,10 @@ class ArticleController extends Controller
                         ->orWhereHas('authors', fn($q) => $q->whereIn('authors.id', $authorIds))
                         ->orWhereHas('source', fn($q) => $q->whereIn('news_sources.id', $sourceIds));
                 });
+            }
+
+            if($query->count() === 0) {
+                return response()->json(['message' => 'No articles found'], 404);
             }
 
             return $query->with(['categories', 'authors', 'source'])->get();
