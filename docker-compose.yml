@@ -65,4 +65,4 @@ services:
         condition: service_healthy
     entrypoint: ['/bin/sh', '-c']
     command:
-      - php artisan queue:work
+      - php artisan queue:work

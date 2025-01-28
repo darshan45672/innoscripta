@@ -446,24 +446,40 @@ class ArticleController extends Controller
 
             if ($request->has('category')) {
                 $categoryName = $request->input('category');
-                $categoryIds = Category::where('name', $categoryName)->pluck('id');
-
-                if ($categoryIds->isEmpty()) {
+    
+                $categoryNames = strpos($categoryName, ',') !== false
+                    ? explode(',', $categoryName)
+                    : [$categoryName];
+    
+                $filteredCategoryIds = Category::whereIn('name', $categoryNames)->pluck('id');
+    
+                if ($filteredCategoryIds->isEmpty()) {
                     return response()->json(['message' => 'No articles found for the specified category'], 404);
                 }
-
-                $query->whereHas('categories', fn($q) => $q->whereIn('categories.id', $categoryIds));
+    
+                $query->whereHas(
+                    'categories',
+                    fn($q) => $q->whereIn('categories.id', $filteredCategoryIds)
+                );
             }
 
             if ($request->has('author')) {
                 $authorName = $request->input('author');
-                $authorIds = Author::where('name', $authorName)->pluck('id');
-
-                if ($authorIds->isEmpty()) {
-                    return response()->json(['message' => 'No articles found for the specified author'], 404);
+    
+                $authorNames = strpos($authorName, ',') !== false
+                    ? explode(',', $authorName)
+                    : [$authorName];
+    
+                $filteredAuthorIds = Author::whereIn('name', $authorNames)->pluck('id');
+    
+                if ($filteredAuthorIds->isEmpty()) {
+                    return response()->json(['message' => 'No articles found for the specified author(s)'], 404);
                 }
-
-                $query->whereHas('authors', fn($q) => $q->whereIn('authors.id', $authorIds));
+    
+                $query->whereHas(
+                    'authors',
+                    fn($q) => $q->whereIn('authors.id', $filteredAuthorIds)
+                );
             }
 
             if (!$request->has(['source', 'category', 'author'])) {
