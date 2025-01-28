@@ -446,7 +446,13 @@ class ArticleController extends Controller
 
             if ($request->has('category')) {
                 $categoryName = $request->input('category');
-                $categoryIds = Category::where('name', $categoryName)->pluck('id');
+                if (strpos($categoryName, ',') !== false) {
+                    $categoryNames = explode(',', $categoryName);
+                    
+                } else {
+                    $categoryNames = [$categoryName];
+                    $categoryIds = Category::where('name', $categoryNames)->pluck('id');
+                }
 
                 if ($categoryIds->isEmpty()) {
                     return response()->json(['message' => 'No articles found for the specified category'], 404);
