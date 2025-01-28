@@ -18,6 +18,7 @@ services:
       - application
     environment:
       - DB_CONNECTION=sqlite
+      - DB_DATABASE=/app/database/database.sqlite
     healthcheck:
       test: ["CMD", "curl", "-f", "http://0.0.0.0:8000"]
       interval: 10s
@@ -41,12 +42,13 @@ services:
       - application
     environment:
       - DB_CONNECTION=sqlite
+      - DB_DATABASE=/app/database/database.sqlite
     depends_on:
       app:
         condition: service_healthy
     entrypoint: ['/bin/sh', '-c']
     command:
-      - php artisan schedule:work
+      - php artisan schedule:run
 
   queue:
     build:
@@ -60,6 +62,7 @@ services:
       - application
     environment:
       - DB_CONNECTION=sqlite
+      - DB_DATABASE=/app/database/database.sqlite
     depends_on:
       app:
         condition: service_healthy
